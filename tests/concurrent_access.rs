@@ -1,6 +1,6 @@
-use utils::{tmpdir,open_database};
-use leveldb::options::{Options,WriteOptions};
+use crate::utils::{open_database, tmpdir};
 use leveldb::database::kv::KV;
+use leveldb::options::{Options, WriteOptions};
 
 #[test]
 fn access_from_threads() {
@@ -14,17 +14,20 @@ fn access_from_threads() {
     let database = open_database(tmp.path(), true);
     let shared = Arc::new(database);
 
-    let _ = (0..10).map(|i| {
-         let local_db = shared.clone();
+    let _ = (0..10)
+        .map(|i| {
+            let local_db = shared.clone();
 
-         thread::spawn(move || {
-             let write_opts = WriteOptions::new();
-             match local_db.put(write_opts, i, &[i as u8]) {
-                 Ok(_) => { },
-                 Err(e) => { panic!("failed to write to database: {:?}", e) }
-             }
-         })
-    })
-    .map(JoinHandle::join)
-    .collect::<Vec<_>>();
+            thread::spawn(move || {
+                let write_opts = WriteOptions::new();
+                match local_db.put(write_opts, i, &[i as u8]) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        panic!("failed to write to database: {:?}", e)
+                    }
+                }
+            })
+        })
+        .map(JoinHandle::join)
+        .collect::<Vec<_>>();
 }

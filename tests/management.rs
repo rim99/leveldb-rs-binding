@@ -1,6 +1,6 @@
+use crate::utils::{open_database, tmpdir};
 use leveldb::management::*;
 use leveldb::options::*;
-use utils::{open_database,tmpdir};
 
 #[test]
 fn test_destroy_database() {

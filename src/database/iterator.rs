@@ -2,17 +2,18 @@
 //!
 //! Iteration is one of the most important parts of leveldb. This module provides
 //! Iterators to iterate over key, values and pairs of both.
-use leveldb_sys::{leveldb_iterator_t, leveldb_iter_seek_to_first, leveldb_iter_destroy,
-                  leveldb_iter_seek_to_last, leveldb_create_iterator, leveldb_iter_valid,
-                  leveldb_iter_next, leveldb_iter_prev, leveldb_iter_key, leveldb_iter_value,
-                  leveldb_readoptions_destroy, leveldb_iter_seek};
-use libc::{size_t, c_char};
-use std::iter;
+use super::key::{from_u8, Key};
+use super::options::{c_readoptions, ReadOptions};
 use super::Database;
-use super::options::{ReadOptions, c_readoptions};
-use super::key::{Key, from_u8};
-use std::slice::from_raw_parts;
+use leveldb_sys::{
+    leveldb_create_iterator, leveldb_iter_destroy, leveldb_iter_key, leveldb_iter_next,
+    leveldb_iter_prev, leveldb_iter_seek, leveldb_iter_seek_to_first, leveldb_iter_seek_to_last,
+    leveldb_iter_valid, leveldb_iter_value, leveldb_iterator_t, leveldb_readoptions_destroy,
+};
+use libc::{c_char, size_t};
+use std::iter;
 use std::marker::PhantomData;
+use std::slice::from_raw_parts;
 
 #[allow(missing_docs)]
 struct RawIterator {
@@ -138,7 +139,6 @@ pub trait LevelDBIterator<'a, K: Key> {
     fn advance(&mut self) -> bool {
         unsafe {
             if !self.start() {
-
                 self.advance_raw();
             } else {
                 if let Some(k) = self.from_key() {
@@ -187,14 +187,15 @@ pub trait LevelDBIterator<'a, K: Key> {
     fn seek(&self, key: &K) {
         unsafe {
             key.as_slice(|k| {
-                leveldb_iter_seek(self.raw_iterator(),
-                                  k.as_ptr() as *mut c_char,
-                                  k.len() as size_t);
+                leveldb_iter_seek(
+                    self.raw_iterator(),
+                    k.as_ptr() as *mut c_char,
+                    k.len() as size_t,
+                );
             })
         }
     }
 }
-
 
 impl<'a, K: Key> Iterator<'a, K> {
     fn new(database: &'a Database<K>, options: ReadOptions<'a, K>) -> Iterator<'a, K> {
@@ -220,8 +221,8 @@ impl<'a, K: Key> Iterator<'a, K> {
     }
 }
 
-impl<'a, K: Key> LevelDBIterator<'a, K> for Iterator<'a,K> {
-    type RevIter = RevIterator<'a,K>;
+impl<'a, K: Key> LevelDBIterator<'a, K> for Iterator<'a, K> {
+    type RevIter = RevIterator<'a, K>;
 
     #[inline]
     fn raw_iterator(&self) -> *mut leveldb_iterator_t {
@@ -246,7 +247,9 @@ impl<'a, K: Key> LevelDBIterator<'a, K> for Iterator<'a,K> {
     #[inline]
     fn reverse(self) -> Self::RevIter {
         if self.start {
-            unsafe { leveldb_iter_seek_to_last(self.iter.ptr); }
+            unsafe {
+                leveldb_iter_seek_to_last(self.iter.ptr);
+            }
         }
         RevIterator {
             start: self.start,
@@ -276,8 +279,8 @@ impl<'a, K: Key> LevelDBIterator<'a, K> for Iterator<'a,K> {
     }
 }
 
-impl<'a, K: Key> LevelDBIterator<'a, K> for RevIterator<'a,K> {
-    type RevIter = Iterator<'a,K>;
+impl<'a, K: Key> LevelDBIterator<'a, K> for RevIterator<'a, K> {
+    type RevIter = Iterator<'a, K>;
 
     #[inline]
     fn raw_iterator(&self) -> *mut leveldb_iterator_t {
@@ -302,7 +305,9 @@ impl<'a, K: Key> LevelDBIterator<'a, K> for RevIterator<'a,K> {
     #[inline]
     fn reverse(self) -> Self::RevIter {
         if self.start {
-            unsafe { leveldb_iter_seek_to_first(self.iter.ptr); }
+            unsafe {
+                leveldb_iter_seek_to_first(self.iter.ptr);
+            }
         }
         Iterator {
             start: self.start,
@@ -332,9 +337,11 @@ impl<'a, K: Key> LevelDBIterator<'a, K> for RevIterator<'a,K> {
     }
 }
 
-impl<'a,K: Key> KeyIterator<'a,K> {
+impl<'a, K: Key> KeyIterator<'a, K> {
     fn new(database: &'a Database<K>, options: ReadOptions<'a, K>) -> KeyIterator<'a, K> {
-        KeyIterator { inner: Iterator::new(database, options) }
+        KeyIterator {
+            inner: Iterator::new(database, options),
+        }
     }
 
     /// return the last element of the iterator
@@ -344,9 +351,11 @@ impl<'a,K: Key> KeyIterator<'a,K> {
     }
 }
 
-impl<'a,K: Key> ValueIterator<'a,K> {
+impl<'a, K: Key> ValueIterator<'a, K> {
     fn new(database: &'a Database<K>, options: ReadOptions<'a, K>) -> ValueIterator<'a, K> {
-        ValueIterator { inner: Iterator::new(database, options) }
+        ValueIterator {
+            inner: Iterator::new(database, options),
+        }
     }
 
     /// return the last element of the iterator
@@ -358,19 +367,19 @@ impl<'a,K: Key> ValueIterator<'a,K> {
 
 macro_rules! impl_leveldb_iterator {
     ($T:ty, $RevT:ty) => {
-        impl<'a,K: Key> LevelDBIterator<'a, K> for $T {
+        impl<'a, K: Key> LevelDBIterator<'a, K> for $T {
             type RevIter = $RevT;
-        
+
             #[inline]
             fn raw_iterator(&self) -> *mut leveldb_iterator_t {
                 self.inner.iter.ptr
             }
-        
+
             #[inline]
             fn start(&self) -> bool {
                 self.inner.start
             }
-        
+
             #[inline]
             fn started(&mut self) {
                 self.inner.start = false
@@ -380,26 +389,28 @@ macro_rules! impl_leveldb_iterator {
             unsafe fn advance_raw(&mut self) {
                 self.inner.advance_raw();
             }
-        
+
             #[inline]
             fn reverse(self) -> Self::RevIter {
-                Self::RevIter { inner: self.inner.reverse() }
+                Self::RevIter {
+                    inner: self.inner.reverse(),
+                }
             }
-        
+
             fn from(mut self, key: &'a K) -> Self {
                 self.inner.from = Some(key);
                 self
             }
-        
+
             fn to(mut self, key: &'a K) -> Self {
                 self.inner.to = Some(key);
                 self
             }
-        
+
             fn from_key(&self) -> Option<&K> {
                 self.inner.from
             }
-        
+
             fn to_key(&self) -> Option<&K> {
                 self.inner.to
             }
@@ -407,16 +418,16 @@ macro_rules! impl_leveldb_iterator {
     };
 }
 
-impl_leveldb_iterator!(KeyIterator<'a,K>, RevKeyIterator<'a,K>);
-impl_leveldb_iterator!(RevKeyIterator<'a,K>, KeyIterator<'a,K>);
-impl_leveldb_iterator!(ValueIterator<'a,K>, RevValueIterator<'a,K>);
-impl_leveldb_iterator!(RevValueIterator<'a,K>, ValueIterator<'a,K>);
+impl_leveldb_iterator!(KeyIterator<'a, K>, RevKeyIterator<'a, K>);
+impl_leveldb_iterator!(RevKeyIterator<'a, K>, KeyIterator<'a, K>);
+impl_leveldb_iterator!(ValueIterator<'a, K>, RevValueIterator<'a, K>);
+impl_leveldb_iterator!(RevValueIterator<'a, K>, ValueIterator<'a, K>);
 
 macro_rules! impl_iterator {
     ($T:ty, $Item:ty, $ItemMethod:ident) => {
         impl<'a, K: Key> iter::Iterator for $T {
             type Item = $Item;
-        
+
             fn next(&mut self) -> Option<Self::Item> {
                 if self.advance() {
                     Some(self.$ItemMethod())
@@ -428,8 +439,8 @@ macro_rules! impl_iterator {
     };
 }
 
-impl_iterator!(Iterator<'a, K>, (K,Vec<u8>), entry);
-impl_iterator!(RevIterator<'a, K>, (K,Vec<u8>), entry);
+impl_iterator!(Iterator<'a, K>, (K, Vec<u8>), entry);
+impl_iterator!(RevIterator<'a, K>, (K, Vec<u8>), entry);
 impl_iterator!(KeyIterator<'a, K>, K, key);
 impl_iterator!(RevKeyIterator<'a, K>, K, key);
 impl_iterator!(ValueIterator<'a, K>, Vec<u8>, value);
