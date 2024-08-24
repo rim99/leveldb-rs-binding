@@ -6,16 +6,12 @@ Almost-complete bindings for leveldb for Rust.
 
 ## Rust version policy
 
-`leveldb` is built and tested on stable releases of Rust. This are currently `1.31.0` and `1.43.1`. Nightlies
-might not build at any point and failures are allowed. There are no known issues with nightlies, though.
+`leveldb` is built and tested on stable releases of Rust. Latest tested version: 1.80.1
 
-## Prerequisites
+## Dependencies
 
-`snappy` and `leveldb` need to be installed. On Ubuntu, I recommend:
-
-```sh
-sudo apt-get install libleveldb-dev libsnappy-dev
-```
+- LevelDB: master branch, commit id: 23e35d7
+- Snappy: v1.2.1
 
 ## Usage
 
@@ -24,7 +20,7 @@ If your project is using [Cargo](http://crates.io), drop the following lines in 
 ```text
 [dependencies]
 
-leveldb = "0.8"
+leveldb-rs-binding = "0.8"
 ```
 
 ## Development
