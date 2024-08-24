@@ -1,10 +1,10 @@
 [package]
-name = "leveldb"
-version = "0.8.6"
+name = "leveldb-rs-binding"
+version = "0.8.7"
 edition = "2021"
 authors = [
     "Florian Gilcher <florian.gilcher@asquera.de>",
-    "Zhang Xin <zx3306@126.com>"
+    "Zhang Xin <zxin3306@126.com>",
 ]
 
 description = "An interface for leveldb"
@@ -16,19 +16,24 @@ readme = "README.md"
 homepage = "https://github.com/rim99/leveldb-rs-binding"
 repository = "https://github.com/rim99/leveldb-rs-binding"
 
+build = "src/sys/build.rs"
+links = "leveldb"
 autotests = false
 
 [features]
-default = ["leveldb-sys/snappy"]
+default = ["snappy"]
+snappy = []
 
 [lib]
 name = "leveldb"
 
 [dependencies]
-libc = "0.2.158"
+libc = "0.2.*"
+ffi-opaque = "2"
 
-[dependencies.leveldb-sys]
-version = "2.0.0"
+[build-dependencies]
+cmake = "0.1"
+num_cpus = "1.10"
 
 [dev-dependencies]
 tempdir = "0.3.4"

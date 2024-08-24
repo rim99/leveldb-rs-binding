@@ -1,0 +1,7 @@
+
+[submodule "deps/google-leveldb"]
+	path = deps/google-leveldb
+	url = https://github.com/google/leveldb.git
+[submodule "deps/google-snappy"]
+	path = deps/google-snappy
+	url = https://github.com/google/snappy.git

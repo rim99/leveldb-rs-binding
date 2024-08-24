@@ -1,6 +1,6 @@
 //! The module defining custom leveldb error type.
 
-use leveldb_sys::leveldb_free;
+use crate::sys::leveldb::leveldb_free;
 use libc::c_char;
 use libc::c_void;
 use std;

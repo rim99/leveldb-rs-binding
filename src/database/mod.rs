@@ -1,6 +1,6 @@
 //! The main database module, allowing to interface with leveldb on
 //! a key-value basis.
-use leveldb_sys::*;
+use crate::sys::leveldb::*;
 
 use self::error::Error;
 use self::options::{c_options, Options};

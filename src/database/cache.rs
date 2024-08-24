@@ -1,5 +1,5 @@
 //! Structs and traits to work with the leveldb cache.
-use leveldb_sys::{leveldb_cache_create_lru, leveldb_cache_destroy, leveldb_cache_t};
+use crate::sys::leveldb::{leveldb_cache_create_lru, leveldb_cache_destroy, leveldb_cache_t};
 use libc::size_t;
 
 #[allow(missing_docs)]

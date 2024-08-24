@@ -5,7 +5,7 @@
 use super::key::{from_u8, Key};
 use super::options::{c_readoptions, ReadOptions};
 use super::Database;
-use leveldb_sys::{
+use crate::sys::leveldb::{
     leveldb_create_iterator, leveldb_iter_destroy, leveldb_iter_key, leveldb_iter_next,
     leveldb_iter_prev, leveldb_iter_seek, leveldb_iter_seek_to_first, leveldb_iter_seek_to_last,
     leveldb_iter_valid, leveldb_iter_value, leveldb_iterator_t, leveldb_readoptions_destroy,

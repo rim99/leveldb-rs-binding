@@ -43,8 +43,9 @@
 #![crate_name = "leveldb"]
 #![deny(missing_docs)]
 
-extern crate leveldb_sys;
 extern crate libc;
+#[macro_use]
+extern crate ffi_opaque;
 
 pub use crate::database::batch;
 pub use crate::database::compaction;
@@ -55,10 +56,11 @@ pub use crate::database::kv;
 pub use crate::database::management;
 pub use crate::database::options;
 pub use crate::database::snapshots;
-use leveldb_sys::{leveldb_major_version, leveldb_minor_version};
+pub use crate::sys::leveldb::{leveldb_major_version, leveldb_minor_version};
 
 #[allow(missing_docs)]
 pub mod database;
+pub mod sys;
 
 /// Library version information
 ///

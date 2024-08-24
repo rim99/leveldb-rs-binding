@@ -5,7 +5,7 @@ use super::Database;
 use crate::database::key::from_u8;
 use crate::database::key::Key;
 use crate::options::{c_writeoptions, WriteOptions};
-use leveldb_sys::*;
+use crate::sys::leveldb::*;
 use libc::{c_char, c_void, size_t};
 use std::marker::PhantomData;
 use std::ptr;

@@ -1,7 +1,7 @@
 //! Compaction
 use super::key::Key;
 use super::Database;
-use leveldb_sys::leveldb_compact_range;
+use crate::sys::leveldb::leveldb_compact_range;
 use libc::{c_char, size_t};
 
 pub trait Compaction<'a, K: Key + 'a> {

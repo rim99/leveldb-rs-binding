@@ -6,7 +6,7 @@
 //! Databases written with one Comparator cannot be opened with another.
 use crate::database::key::from_u8;
 use crate::database::key::Key;
-use leveldb_sys::*;
+use crate::sys::leveldb::*;
 use libc::{c_char, c_void, size_t};
 use std::cmp::Ordering;
 use std::marker::PhantomData;

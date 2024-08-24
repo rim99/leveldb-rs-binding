@@ -4,7 +4,7 @@
 //! * `Options`: used when opening a database
 //! * `ReadOptions`: used when reading from leveldb
 //! * `WriteOptions`: used when writng to leveldb
-use leveldb_sys::*;
+use crate::sys::leveldb::*;
 
 use crate::database::cache::Cache;
 use crate::database::key::Key;
