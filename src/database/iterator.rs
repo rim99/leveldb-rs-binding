@@ -107,6 +107,7 @@ impl<'a, K: Key + 'a> Iterable<'a, K> for Database<K> {
 }
 
 #[allow(missing_docs)]
+#[allow(unused_attributes)]
 pub trait LevelDBIterator<'a, K: Key> {
     type RevIter: LevelDBIterator<'a, K>;
 

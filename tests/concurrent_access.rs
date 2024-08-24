@@ -14,7 +14,7 @@ fn access_from_threads() {
     let database = open_database(tmp.path(), true);
     let shared = Arc::new(database);
 
-    (0..10).map(|i| {
+    let _ = (0..10).map(|i| {
          let local_db = shared.clone();
 
          thread::spawn(move || {
