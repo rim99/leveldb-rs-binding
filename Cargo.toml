@@ -16,7 +16,7 @@ readme = "README.md"
 homepage = "https://github.com/rim99/leveldb-rs-binding"
 repository = "https://github.com/rim99/leveldb-rs-binding"
 
-build = "src/sys/build.rs"
+build = "src/build.rs"
 links = "leveldb"
 autotests = false
 

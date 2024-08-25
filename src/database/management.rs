@@ -6,7 +6,7 @@ use std::ffi::CString;
 use std::path::Path;
 use std::ptr;
 
-use crate::sys::leveldb::{leveldb_destroy_db, leveldb_repair_db};
+use crate::leveldb::{leveldb_destroy_db, leveldb_repair_db};
 
 /// destroy a database. You shouldn't hold a handle on the database anywhere at that time.
 pub fn destroy(name: &Path, options: Options) -> Result<(), Error> {

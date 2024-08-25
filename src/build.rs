@@ -14,14 +14,13 @@ fn build_snappy() -> PathBuf {
     let libdir = Path::new(&outdir).join(LIBDIR);
 
     env::set_var("NUM_JOBS", num_cpus::get().to_string());
-    let dest_prefix =
-        cmake::Config::new(Path::new("deps").join("google-snappy"))
-            .define("BUILD_SHARED_LIBS", "OFF")
-            .define("SNAPPY_BUILD_TESTS", "OFF")
-            .define("SNAPPY_BUILD_BENCHMARKS", "OFF")
-            .define("HAVE_LIBZ", "OFF")
-            .define("CMAKE_INSTALL_LIBDIR", &libdir)
-            .build();
+    let dest_prefix = cmake::Config::new(Path::new("deps").join("google-snappy"))
+        .define("BUILD_SHARED_LIBS", "OFF")
+        .define("SNAPPY_BUILD_TESTS", "OFF")
+        .define("SNAPPY_BUILD_BENCHMARKS", "OFF")
+        .define("HAVE_LIBZ", "OFF")
+        .define("CMAKE_INSTALL_LIBDIR", &libdir)
+        .build();
 
     assert_eq!(
         dest_prefix.join(LIBDIR),
@@ -41,8 +40,7 @@ fn build_leveldb(snappy_prefix: Option<PathBuf>) {
     let libdir = Path::new(&outdir).join(LIBDIR);
 
     env::set_var("NUM_JOBS", num_cpus::get().to_string());
-    let mut config =
-        cmake::Config::new(Path::new("deps").join("google-leveldb"));
+    let mut config = cmake::Config::new(Path::new("deps").join("google-leveldb"));
     config
         .define("LEVELDB_BUILD_TESTS", "OFF")
         .define("LEVELDB_BUILD_BENCHMARKS", "OFF")
@@ -53,10 +51,7 @@ fn build_leveldb(snappy_prefix: Option<PathBuf>) {
         #[cfg(not(target_env = "msvc"))]
         let ldflags = format!("-L{}", snappy_prefix.join(LIBDIR).display());
 
-        env::set_var(
-            "LDFLAGS",
-            ldflags
-        );
+        env::set_var("LDFLAGS", ldflags);
 
         config
             .define("HAVE_SNAPPY", "ON")
