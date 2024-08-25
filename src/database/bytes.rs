@@ -44,7 +44,7 @@ impl Drop for Bytes {
         unsafe {
             use libc::c_void;
 
-            crate::leveldb::leveldb_free(self.bytes as *mut u8 as *mut c_void);
+            crate::binding::leveldb_free(self.bytes as *mut u8 as *mut c_void);
         }
     }
 }

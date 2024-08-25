@@ -4,7 +4,7 @@ use super::error::Error;
 use super::Database;
 use crate::database::key::from_u8;
 use crate::database::key::Key;
-use crate::leveldb::*;
+use crate::binding::*;
 use crate::options::{c_writeoptions, WriteOptions};
 use libc::{c_char, c_void, size_t};
 use std::marker::PhantomData;

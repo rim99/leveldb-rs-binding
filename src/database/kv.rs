@@ -5,7 +5,7 @@ use super::Database;
 use super::bytes::Bytes;
 use super::error::Error;
 use crate::database::key::Key;
-use crate::leveldb::*;
+use crate::binding::*;
 use crate::options::{c_readoptions, c_writeoptions, ReadOptions, WriteOptions};
 use libc::{c_char, size_t};
 use std::borrow::Borrow;

@@ -2,8 +2,8 @@
 //!
 //! Snapshots give you a reference to the database at a certain
 //! point in time and won't change while you work with them.
-use crate::leveldb::{leveldb_create_snapshot, leveldb_release_snapshot};
-use crate::leveldb::{leveldb_snapshot_t, leveldb_t};
+use crate::binding::{leveldb_create_snapshot, leveldb_release_snapshot};
+use crate::binding::{leveldb_snapshot_t, leveldb_t};
 
 use crate::database::key::Key;
 use crate::database::kv::KV;
