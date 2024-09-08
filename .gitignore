@@ -3,3 +3,4 @@ testdbs
 target
 *sw*
 Cargo.lock
+.vscode
