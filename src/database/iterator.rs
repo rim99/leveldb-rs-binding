@@ -2,7 +2,7 @@
 //!
 //! Iteration is one of the most important parts of leveldb. This module provides
 //! Iterators to iterate over key, values and pairs of both.
-use super::key::{from_u8, Key};
+use super::serializable::{from_u8, Serializable};
 use super::options::{c_readoptions, ReadOptions};
 use super::Database;
 use crate::binding::{
@@ -30,7 +30,7 @@ impl Drop for RawIterator {
 /// An iterator over the leveldb keyspace.
 ///
 /// Returns key and value as a tuple.
-pub struct Iterator<'a, K: Key + 'a> {
+pub struct Iterator<'a, K: Serializable + 'a> {
     start: bool,
     // Iterator accesses the Database through a leveldb_iter_t pointer
     // but needs to hold the reference for lifetime tracking
@@ -44,7 +44,7 @@ pub struct Iterator<'a, K: Key + 'a> {
 /// An iterator over the leveldb keyspace  that browses the keys backwards.
 ///
 /// Returns key and value as a tuple.
-pub struct RevIterator<'a, K: Key + 'a> {
+pub struct RevIterator<'a, K: Serializable + 'a> {
     start: bool,
     // Iterator accesses the Database through a leveldb_iter_t pointer
     // but needs to hold the reference for lifetime tracking
@@ -58,33 +58,33 @@ pub struct RevIterator<'a, K: Key + 'a> {
 /// An iterator over the leveldb keyspace.
 ///
 /// Returns just the keys.
-pub struct KeyIterator<'a, K: Key + 'a> {
+pub struct KeyIterator<'a, K: Serializable + 'a> {
     inner: Iterator<'a, K>,
 }
 
 /// An iterator over the leveldb keyspace that browses the keys backwards.
 ///
 /// Returns just the keys.
-pub struct RevKeyIterator<'a, K: Key + 'a> {
+pub struct RevKeyIterator<'a, K: Serializable + 'a> {
     inner: RevIterator<'a, K>,
 }
 
 /// An iterator over the leveldb keyspace.
 ///
 /// Returns just the value.
-pub struct ValueIterator<'a, K: Key + 'a> {
+pub struct ValueIterator<'a, K: Serializable + 'a> {
     inner: Iterator<'a, K>,
 }
 
 /// An iterator over the leveldb keyspace that browses the keys backwards.
 ///
 /// Returns just the value.
-pub struct RevValueIterator<'a, K: Key + 'a> {
+pub struct RevValueIterator<'a, K: Serializable + 'a> {
     inner: RevIterator<'a, K>,
 }
 
 /// A trait to allow access to the three main iteration styles of leveldb.
-pub trait Iterable<'a, K: Key + 'a> {
+pub trait Iterable<'a, K: Serializable + 'a> {
     /// Return an Iterator iterating over (Key,Value) pairs
     fn iter(&'a self, options: ReadOptions<'a, K>) -> Iterator<K>;
     /// Returns an Iterator iterating over Keys only.
@@ -93,7 +93,7 @@ pub trait Iterable<'a, K: Key + 'a> {
     fn value_iter(&'a self, options: ReadOptions<'a, K>) -> ValueIterator<K>;
 }
 
-impl<'a, K: Key + 'a> Iterable<'a, K> for Database<K> {
+impl<'a, K: Serializable + 'a> Iterable<'a, K> for Database<K> {
     fn iter(&'a self, options: ReadOptions<'a, K>) -> Iterator<K> {
         Iterator::new(self, options)
     }
@@ -109,7 +109,7 @@ impl<'a, K: Key + 'a> Iterable<'a, K> for Database<K> {
 
 #[allow(missing_docs)]
 #[allow(unused_attributes)]
-pub trait LevelDBIterator<'a, K: Key> {
+pub trait LevelDBIterator<'a, K: Serializable> {
     type RevIter: LevelDBIterator<'a, K>;
 
     #[inline]
@@ -197,7 +197,7 @@ pub trait LevelDBIterator<'a, K: Key> {
     }
 }
 
-impl<'a, K: Key> Iterator<'a, K> {
+impl<'a, K: Serializable> Iterator<'a, K> {
     fn new(database: &'a Database<K>, options: ReadOptions<'a, K>) -> Iterator<'a, K> {
         unsafe {
             let c_readoptions = c_readoptions(&options);
@@ -221,7 +221,7 @@ impl<'a, K: Key> Iterator<'a, K> {
     }
 }
 
-impl<'a, K: Key> LevelDBIterator<'a, K> for Iterator<'a, K> {
+impl<'a, K: Serializable> LevelDBIterator<'a, K> for Iterator<'a, K> {
     type RevIter = RevIterator<'a, K>;
 
     #[inline]
@@ -279,7 +279,7 @@ impl<'a, K: Key> LevelDBIterator<'a, K> for Iterator<'a, K> {
     }
 }
 
-impl<'a, K: Key> LevelDBIterator<'a, K> for RevIterator<'a, K> {
+impl<'a, K: Serializable> LevelDBIterator<'a, K> for RevIterator<'a, K> {
     type RevIter = Iterator<'a, K>;
 
     #[inline]
@@ -337,7 +337,7 @@ impl<'a, K: Key> LevelDBIterator<'a, K> for RevIterator<'a, K> {
     }
 }
 
-impl<'a, K: Key> KeyIterator<'a, K> {
+impl<'a, K: Serializable> KeyIterator<'a, K> {
     fn new(database: &'a Database<K>, options: ReadOptions<'a, K>) -> KeyIterator<'a, K> {
         KeyIterator {
             inner: Iterator::new(database, options),
@@ -351,7 +351,7 @@ impl<'a, K: Key> KeyIterator<'a, K> {
     }
 }
 
-impl<'a, K: Key> ValueIterator<'a, K> {
+impl<'a, K: Serializable> ValueIterator<'a, K> {
     fn new(database: &'a Database<K>, options: ReadOptions<'a, K>) -> ValueIterator<'a, K> {
         ValueIterator {
             inner: Iterator::new(database, options),
@@ -367,7 +367,7 @@ impl<'a, K: Key> ValueIterator<'a, K> {
 
 macro_rules! impl_leveldb_iterator {
     ($T:ty, $RevT:ty) => {
-        impl<'a, K: Key> LevelDBIterator<'a, K> for $T {
+        impl<'a, K: Serializable> LevelDBIterator<'a, K> for $T {
             type RevIter = $RevT;
 
             #[inline]
@@ -425,7 +425,7 @@ impl_leveldb_iterator!(RevValueIterator<'a, K>, ValueIterator<'a, K>);
 
 macro_rules! impl_iterator {
     ($T:ty, $Item:ty, $ItemMethod:ident) => {
-        impl<'a, K: Key> iter::Iterator for $T {
+        impl<'a, K: Serializable> iter::Iterator for $T {
             type Item = $Item;
 
             fn next(&mut self) -> Option<Self::Item> {

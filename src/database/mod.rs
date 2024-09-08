@@ -8,7 +8,7 @@ use std::ffi::CString;
 
 use std::path::Path;
 
-use self::key::Key;
+use self::serializable::Serializable;
 use comparator::{create_comparator, Comparator};
 use std::ptr;
 
@@ -22,7 +22,7 @@ pub mod compaction;
 pub mod comparator;
 pub mod error;
 pub mod iterator;
-pub mod key;
+pub mod serializable;
 pub mod kv;
 pub mod management;
 pub mod options;
@@ -67,7 +67,7 @@ impl Drop for RawComparator {
 ///
 /// Multiple Database objects can be kept around, as leveldb synchronises
 /// internally.
-pub struct Database<K: Key> {
+pub struct Database<K: Serializable> {
     database: RawDB,
     // this holds a reference passed into leveldb
     // it is never read from Rust, but must be kept around
@@ -80,10 +80,10 @@ pub struct Database<K: Key> {
     marker: PhantomData<K>,
 }
 
-unsafe impl<K: Key> Sync for Database<K> {}
-unsafe impl<K: Key> Send for Database<K> {}
+unsafe impl<K: Serializable> Sync for Database<K> {}
+unsafe impl<K: Serializable> Send for Database<K> {}
 
-impl<K: Key> Database<K> {
+impl<K: Serializable> Database<K> {
     fn new(
         database: *mut leveldb_t,
         options: Options,

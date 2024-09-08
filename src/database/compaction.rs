@@ -1,14 +1,14 @@
 //! Compaction
-use super::key::Key;
+use super::serializable::Serializable;
 use super::Database;
 use crate::binding::leveldb_compact_range;
 use libc::{c_char, size_t};
 
-pub trait Compaction<'a, K: Key + 'a> {
+pub trait Compaction<'a, K: Serializable + 'a> {
     fn compact(&self, start: &'a K, limit: &'a K);
 }
 
-impl<'a, K: Key + 'a> Compaction<'a, K> for Database<K> {
+impl<'a, K: Serializable + 'a> Compaction<'a, K> for Database<K> {
     fn compact(&self, start: &'a K, limit: &'a K) {
         unsafe {
             start.as_slice(|s| {

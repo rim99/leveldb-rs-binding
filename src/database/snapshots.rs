@@ -5,7 +5,7 @@
 use crate::binding::{leveldb_create_snapshot, leveldb_release_snapshot};
 use crate::binding::{leveldb_snapshot_t, leveldb_t};
 
-use crate::database::key::Key;
+use crate::database::serializable::Serializable;
 use crate::database::kv::KV;
 use crate::database::Database;
 
@@ -31,20 +31,20 @@ impl Drop for RawSnapshot {
 ///
 /// Represents a database at a certain point in time,
 /// and allows for all read operations (get and iteration).
-pub struct Snapshot<'a, K: Key + 'a> {
+pub struct Snapshot<'a, K: Serializable + 'a> {
     raw: RawSnapshot,
     database: &'a Database<K>,
 }
 
 /// Structs implementing the Snapshots trait can be
 /// snapshotted.
-pub trait Snapshots<K: Key> {
+pub trait Snapshots<K: Serializable> {
     /// Creates a snapshot and returns a struct
     /// representing it.
     fn snapshot<'a>(&'a self) -> Snapshot<'a, K>;
 }
 
-impl<K: Key> Snapshots<K> for Database<K> {
+impl<K: Serializable> Snapshots<K> for Database<K> {
     fn snapshot<'a>(&'a self) -> Snapshot<'a, K> {
         let db_ptr = self.database.ptr;
         let snap = unsafe { leveldb_create_snapshot(db_ptr) };
@@ -60,7 +60,7 @@ impl<K: Key> Snapshots<K> for Database<K> {
     }
 }
 
-impl<'a, K: Key> Snapshot<'a, K> {
+impl<'a, K: Serializable> Snapshot<'a, K> {
     /// fetches a key from the database
     ///
     /// Inserts this snapshot into ReadOptions before reading
@@ -80,7 +80,7 @@ impl<'a, K: Key> Snapshot<'a, K> {
     }
 }
 
-impl<'a, K: Key + 'a> Iterable<'a, K> for Snapshot<'a, K> {
+impl<'a, K: Serializable + 'a> Iterable<'a, K> for Snapshot<'a, K> {
     fn iter(&'a self, mut options: ReadOptions<'a, K>) -> Iterator<K> {
         options.snapshot = Some(self);
         self.database.iter(options)

@@ -4,8 +4,8 @@
 //! Comparators allow to override this comparison.
 //! The ordering of keys introduced by the compartor influences iteration order.
 //! Databases written with one Comparator cannot be opened with another.
-use crate::database::key::from_u8;
-use crate::database::key::Key;
+use crate::database::serializable::from_u8;
+use crate::database::serializable::Serializable;
 use crate::binding::*;
 use libc::{c_char, c_void, size_t};
 use std::cmp::Ordering;
@@ -19,7 +19,7 @@ use std::slice;
 /// * The comparison implementation
 pub trait Comparator {
     /// The type that the comparator compares.
-    type K: Key;
+    type K: Serializable;
 
     /// Return the name of the Comparator
     fn name(&self) -> *const c_char;
@@ -32,12 +32,12 @@ pub trait Comparator {
 }
 
 /// OrdComparator is a comparator comparing Keys that implement `Ord`
-pub struct OrdComparator<K: Key + Ord> {
+pub struct OrdComparator<K: Serializable + Ord> {
     name: String,
     marker: PhantomData<K>,
 }
 
-impl<K: Key + Ord> OrdComparator<K> {
+impl<K: Serializable + Ord> OrdComparator<K> {
     /// Create a new OrdComparator
     pub fn new(name: &str) -> OrdComparator<K> {
         OrdComparator {
@@ -101,7 +101,7 @@ pub fn create_comparator<T: Comparator>(x: Box<T>) -> *mut leveldb_comparator_t 
     }
 }
 
-impl<K: Key + Ord> Comparator for OrdComparator<K> {
+impl<K: Serializable + Ord> Comparator for OrdComparator<K> {
     type K = K;
 
     fn name(&self) -> *const c_char {

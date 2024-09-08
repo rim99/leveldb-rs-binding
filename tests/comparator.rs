@@ -2,7 +2,7 @@
 mod comparator {
     use crate::utils::{db_put_simple, tmpdir};
     use leveldb::comparator::{Comparator, OrdComparator};
-    use leveldb::database::key::Key;
+    use leveldb::database::serializable::Serializable;
     use leveldb::database::Database;
     use leveldb::iterator::Iterable;
     use leveldb::options::{Options, ReadOptions};
@@ -14,7 +14,7 @@ mod comparator {
         marker: PhantomData<K>,
     }
 
-    impl<K: Key + Ord> Comparator for ReverseComparator<K> {
+    impl<K: Serializable + Ord> Comparator for ReverseComparator<K> {
         type K = K;
 
         fn name(&self) -> *const c_char {

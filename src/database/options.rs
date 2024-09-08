@@ -7,7 +7,7 @@
 use crate::binding::*;
 
 use crate::database::cache::Cache;
-use crate::database::key::Key;
+use crate::database::serializable::Serializable;
 use crate::database::snapshots::Snapshot;
 use libc::size_t;
 
@@ -93,7 +93,7 @@ impl WriteOptions {
 
 /// The read options to use for any read operation.
 #[allow(missing_copy_implementations)]
-pub struct ReadOptions<'a, K: Key + 'a> {
+pub struct ReadOptions<'a, K: Serializable + 'a> {
     /// Whether to verify the saved checksums on read.
     ///
     /// default: false
@@ -112,7 +112,7 @@ pub struct ReadOptions<'a, K: Key + 'a> {
     pub snapshot: Option<&'a Snapshot<'a, K>>,
 }
 
-impl<'a, K: Key + 'a> ReadOptions<'a, K> {
+impl<'a, K: Serializable + 'a> ReadOptions<'a, K> {
     /// Return a `ReadOptions` struct with the default values.
     pub fn new() -> ReadOptions<'a, K> {
         ReadOptions {
@@ -164,7 +164,7 @@ pub unsafe fn c_writeoptions(options: WriteOptions) -> *mut leveldb_writeoptions
 #[allow(missing_docs)]
 pub unsafe fn c_readoptions<'a, K>(options: &ReadOptions<'a, K>) -> *mut leveldb_readoptions_t
 where
-    K: Key,
+    K: Serializable,
 {
     let c_readoptions = leveldb_readoptions_create();
     leveldb_readoptions_set_verify_checksums(c_readoptions, options.verify_checksums as u8);

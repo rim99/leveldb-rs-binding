@@ -4,7 +4,7 @@ use super::Database;
 
 use super::bytes::Bytes;
 use super::error::Error;
-use crate::database::key::Key;
+use crate::database::serializable::Serializable;
 use crate::binding::*;
 use crate::options::{c_readoptions, c_writeoptions, ReadOptions, WriteOptions};
 use libc::{c_char, size_t};
@@ -13,7 +13,7 @@ use std::ptr;
 
 /// Key-Value-Access to the leveldb database, providing
 /// a basic interface.
-pub trait KV<K: Key> {
+pub trait KV<K: Serializable> {
     /// get a value from the database.
     ///
     /// The passed key will be compared using the comparator.
@@ -53,7 +53,7 @@ pub trait KV<K: Key> {
     fn delete<BK: Borrow<K>>(&self, options: WriteOptions, key: BK) -> Result<(), Error>;
 }
 
-impl<K: Key> KV<K> for Database<K> {
+impl<K: Serializable> KV<K> for Database<K> {
     /// put a binary value into the database.
     ///
     /// If the key is already present in the database, it will be overwritten.

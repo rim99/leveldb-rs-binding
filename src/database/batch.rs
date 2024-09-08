@@ -2,8 +2,8 @@
 
 use super::error::Error;
 use super::Database;
-use crate::database::key::from_u8;
-use crate::database::key::Key;
+use crate::database::serializable::from_u8;
+use crate::database::serializable::Serializable;
 use crate::binding::*;
 use crate::options::{c_writeoptions, WriteOptions};
 use libc::{c_char, c_void, size_t};
@@ -25,19 +25,19 @@ impl Drop for RawWritebatch {
 }
 
 #[allow(missing_docs)]
-pub struct Writebatch<K: Key> {
+pub struct Writebatch<K: Serializable> {
     #[allow(dead_code)]
     writebatch: RawWritebatch,
     marker: PhantomData<K>,
 }
 
 /// Batch access to the database
-pub trait Batch<K: Key> {
+pub trait Batch<K: Serializable> {
     /// Write a batch to the database, ensuring success for all items or an error
     fn write(&self, options: WriteOptions, batch: &Writebatch<K>) -> Result<(), Error>;
 }
 
-impl<K: Key> Batch<K> for Database<K> {
+impl<K: Serializable> Batch<K> for Database<K> {
     fn write(&self, options: WriteOptions, batch: &Writebatch<K>) -> Result<(), Error> {
         unsafe {
             let mut error = ptr::null_mut();
@@ -60,7 +60,7 @@ impl<K: Key> Batch<K> for Database<K> {
     }
 }
 
-impl<K: Key> Writebatch<K> {
+impl<K: Serializable> Writebatch<K> {
     /// Create a new writebatch
     pub fn new() -> Writebatch<K> {
         let ptr = unsafe { leveldb_writebatch_create() };
@@ -122,7 +122,7 @@ impl<K: Key> Writebatch<K> {
 /// A trait for iterators to iterate over written batches and check their validity.
 pub trait WritebatchIterator {
     /// The database key type this iterates over
-    type K: Key;
+    type K: Serializable;
 
     /// Callback for put items
     fn put(&mut self, key: Self::K, value: &[u8]);
@@ -131,7 +131,7 @@ pub trait WritebatchIterator {
     fn deleted(&mut self, key: Self::K);
 }
 
-extern "C" fn put_callback<K: Key, T: WritebatchIterator<K = K>>(
+extern "C" fn put_callback<K: Serializable, T: WritebatchIterator<K = K>>(
     state: *mut c_void,
     key: *const c_char,
     keylen: size_t,
@@ -147,7 +147,7 @@ extern "C" fn put_callback<K: Key, T: WritebatchIterator<K = K>>(
     }
 }
 
-extern "C" fn deleted_callback<K: Key, T: WritebatchIterator<K = K>>(
+extern "C" fn deleted_callback<K: Serializable, T: WritebatchIterator<K = K>>(
     state: *mut c_void,
     key: *const c_char,
     keylen: size_t,
