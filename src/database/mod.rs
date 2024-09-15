@@ -22,10 +22,10 @@ pub mod compaction;
 pub mod comparator;
 pub mod error;
 pub mod iterator;
-pub mod serializable;
 pub mod kv;
 pub mod management;
 pub mod options;
+pub mod serializable;
 pub mod snapshots;
 
 #[allow(missing_docs)]

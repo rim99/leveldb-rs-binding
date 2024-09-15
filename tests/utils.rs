@@ -1,5 +1,5 @@
-use leveldb::database::serializable::Serializable;
 use leveldb::database::kv::KV;
+use leveldb::database::serializable::Serializable;
 use leveldb::database::Database;
 use leveldb::options::{Options, WriteOptions};
 use std::path::Path;

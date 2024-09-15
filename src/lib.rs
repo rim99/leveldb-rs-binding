@@ -47,6 +47,7 @@ extern crate libc;
 #[macro_use]
 extern crate ffi_opaque;
 
+pub use crate::binding::{leveldb_major_version, leveldb_minor_version};
 pub use crate::database::batch;
 pub use crate::database::compaction;
 pub use crate::database::comparator;
@@ -56,11 +57,10 @@ pub use crate::database::kv;
 pub use crate::database::management;
 pub use crate::database::options;
 pub use crate::database::snapshots;
-pub use crate::binding::{leveldb_major_version, leveldb_minor_version};
 
+mod binding;
 #[allow(missing_docs)]
 pub mod database;
-mod binding;
 
 /// Library version information
 ///

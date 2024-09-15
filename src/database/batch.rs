@@ -2,9 +2,9 @@
 
 use super::error::Error;
 use super::Database;
+use crate::binding::*;
 use crate::database::serializable::from_u8;
 use crate::database::serializable::Serializable;
-use crate::binding::*;
 use crate::options::{c_writeoptions, WriteOptions};
 use libc::{c_char, c_void, size_t};
 use std::marker::PhantomData;
@@ -79,28 +79,28 @@ impl<K: Serializable> Writebatch<K> {
     /// Batch a put operation
     pub fn put(&mut self, key: K, value: &[u8]) {
         unsafe {
-            key.as_slice(|k| {
-                leveldb_writebatch_put(
-                    self.writebatch.ptr,
-                    k.as_ptr() as *mut c_char,
-                    k.len() as size_t,
-                    value.as_ptr() as *mut c_char,
-                    value.len() as size_t,
-                );
-            })
+            let key = &key.as_u8();
+
+            leveldb_writebatch_put(
+                self.writebatch.ptr,
+                (key.as_ptr()) as *mut c_char,
+                (key.len()) as size_t,
+                value.as_ptr() as *mut c_char,
+                value.len() as size_t,
+            );
         }
     }
 
     /// Batch a delete operation
     pub fn delete(&mut self, key: K) {
         unsafe {
-            key.as_slice(|k| {
-                leveldb_writebatch_delete(
-                    self.writebatch.ptr,
-                    k.as_ptr() as *mut c_char,
-                    k.len() as size_t,
-                );
-            })
+            let key = &key.as_u8();
+
+            leveldb_writebatch_delete(
+                self.writebatch.ptr,
+                key.as_ptr() as *mut c_char,
+                key.len() as size_t,
+            );
         }
     }
 

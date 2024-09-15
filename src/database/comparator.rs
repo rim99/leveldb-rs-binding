@@ -4,9 +4,9 @@
 //! Comparators allow to override this comparison.
 //! The ordering of keys introduced by the compartor influences iteration order.
 //! Databases written with one Comparator cannot be opened with another.
+use crate::binding::*;
 use crate::database::serializable::from_u8;
 use crate::database::serializable::Serializable;
-use crate::binding::*;
 use libc::{c_char, c_void, size_t};
 use std::cmp::Ordering;
 use std::marker::PhantomData;

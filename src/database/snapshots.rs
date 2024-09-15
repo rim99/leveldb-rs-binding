@@ -5,8 +5,8 @@
 use crate::binding::{leveldb_create_snapshot, leveldb_release_snapshot};
 use crate::binding::{leveldb_snapshot_t, leveldb_t};
 
-use crate::database::serializable::Serializable;
 use crate::database::kv::KV;
+use crate::database::serializable::Serializable;
 use crate::database::Database;
 
 use crate::database::error::Error;

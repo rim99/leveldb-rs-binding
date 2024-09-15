@@ -11,17 +11,15 @@ pub trait Compaction<'a, K: Serializable + 'a> {
 impl<'a, K: Serializable + 'a> Compaction<'a, K> for Database<K> {
     fn compact(&self, start: &'a K, limit: &'a K) {
         unsafe {
-            start.as_slice(|s| {
-                limit.as_slice(|l| {
-                    leveldb_compact_range(
-                        self.database.ptr,
-                        s.as_ptr() as *mut c_char,
-                        s.len() as size_t,
-                        l.as_ptr() as *mut c_char,
-                        l.len() as size_t,
-                    );
-                });
-            });
+            let start = &start.as_u8();
+            let limit = &limit.as_u8();
+            leveldb_compact_range(
+                self.database.ptr,
+                start.as_ptr() as *mut c_char,
+                start.len() as size_t,
+                limit.as_ptr() as *mut c_char,
+                limit.len() as size_t,
+            )
         }
     }
 }

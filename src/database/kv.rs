@@ -4,8 +4,8 @@ use super::Database;
 
 use super::bytes::Bytes;
 use super::error::Error;
-use crate::database::serializable::Serializable;
 use crate::binding::*;
+use crate::database::serializable::Serializable;
 use crate::options::{c_readoptions, c_writeoptions, ReadOptions, WriteOptions};
 use libc::{c_char, size_t};
 use std::borrow::Borrow;
@@ -69,26 +69,25 @@ impl<K: Serializable> KV<K> for Database<K> {
         value: &[u8],
     ) -> Result<(), Error> {
         unsafe {
-            key.borrow().as_slice(|k| {
-                let mut error = ptr::null_mut();
-                let c_writeoptions = c_writeoptions(options);
-                leveldb_put(
-                    self.database.ptr,
-                    c_writeoptions,
-                    k.as_ptr() as *mut c_char,
-                    k.len() as size_t,
-                    value.as_ptr() as *mut c_char,
-                    value.len() as size_t,
-                    &mut error,
-                );
-                leveldb_writeoptions_destroy(c_writeoptions);
+            let k = key.borrow().as_u8();
+            let mut error = ptr::null_mut();
+            let c_writeoptions = c_writeoptions(options);
+            leveldb_put(
+                self.database.ptr,
+                c_writeoptions,
+                k.as_ptr() as *mut c_char,
+                k.len() as size_t,
+                value.as_ptr() as *mut c_char,
+                value.len() as size_t,
+                &mut error,
+            );
+            leveldb_writeoptions_destroy(c_writeoptions);
 
-                if error == ptr::null_mut() {
-                    Ok(())
-                } else {
-                    Err(Error::new_from_char(error))
-                }
-            })
+            if error == ptr::null_mut() {
+                Ok(())
+            } else {
+                Err(Error::new_from_char(error))
+            }
         }
     }
 
@@ -100,23 +99,22 @@ impl<K: Serializable> KV<K> for Database<K> {
     /// NOT the default.
     fn delete<BK: Borrow<K>>(&self, options: WriteOptions, key: BK) -> Result<(), Error> {
         unsafe {
-            key.borrow().as_slice(|k| {
-                let mut error = ptr::null_mut();
-                let c_writeoptions = c_writeoptions(options);
-                leveldb_delete(
-                    self.database.ptr,
-                    c_writeoptions,
-                    k.as_ptr() as *mut c_char,
-                    k.len() as size_t,
-                    &mut error,
-                );
-                leveldb_writeoptions_destroy(c_writeoptions);
-                if error == ptr::null_mut() {
-                    Ok(())
-                } else {
-                    Err(Error::new_from_char(error))
-                }
-            })
+            let k = key.borrow().as_u8();
+            let mut error = ptr::null_mut();
+            let c_writeoptions = c_writeoptions(options);
+            leveldb_delete(
+                self.database.ptr,
+                c_writeoptions,
+                k.as_ptr() as *mut c_char,
+                k.len() as size_t,
+                &mut error,
+            );
+            leveldb_writeoptions_destroy(c_writeoptions);
+            if error == ptr::null_mut() {
+                Ok(())
+            } else {
+                Err(Error::new_from_char(error))
+            }
         }
     }
 
@@ -126,26 +124,25 @@ impl<K: Serializable> KV<K> for Database<K> {
         key: BK,
     ) -> Result<Option<Bytes>, Error> {
         unsafe {
-            key.borrow().as_slice(|k| {
-                let mut error = ptr::null_mut();
-                let mut length: size_t = 0;
-                let c_readoptions = c_readoptions(&options);
-                let result = leveldb_get(
-                    self.database.ptr,
-                    c_readoptions,
-                    k.as_ptr() as *mut c_char,
-                    k.len() as size_t,
-                    &mut length,
-                    &mut error,
-                );
-                leveldb_readoptions_destroy(c_readoptions);
+            let k = key.borrow().as_u8();
+            let mut error = ptr::null_mut();
+            let mut length: size_t = 0;
+            let c_readoptions = c_readoptions(&options);
+            let result = leveldb_get(
+                self.database.ptr,
+                c_readoptions,
+                k.as_ptr() as *mut c_char,
+                k.len() as size_t,
+                &mut length,
+                &mut error,
+            );
+            leveldb_readoptions_destroy(c_readoptions);
 
-                if error == ptr::null_mut() {
-                    Ok(Bytes::from_raw(result as *mut u8, length))
-                } else {
-                    Err(Error::new_from_char(error))
-                }
-            })
+            if error == ptr::null_mut() {
+                Ok(Bytes::from_raw(result as *mut u8, length))
+            } else {
+                Err(Error::new_from_char(error))
+            }
         }
     }
 

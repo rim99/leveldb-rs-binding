@@ -2,8 +2,8 @@
 //!
 //! Iteration is one of the most important parts of leveldb. This module provides
 //! Iterators to iterate over key, values and pairs of both.
-use super::serializable::{from_u8, Serializable};
 use super::options::{c_readoptions, ReadOptions};
+use super::serializable::{from_u8, Serializable};
 use super::Database;
 use crate::binding::{
     leveldb_create_iterator, leveldb_iter_destroy, leveldb_iter_key, leveldb_iter_next,
@@ -186,13 +186,13 @@ pub trait LevelDBIterator<'a, K: Serializable> {
 
     fn seek(&self, key: &K) {
         unsafe {
-            key.as_slice(|k| {
-                leveldb_iter_seek(
-                    self.raw_iterator(),
-                    k.as_ptr() as *mut c_char,
-                    k.len() as size_t,
-                );
-            })
+            let key = &key.as_u8();
+
+            leveldb_iter_seek(
+                self.raw_iterator(),
+                key.as_ptr() as *mut c_char,
+                key.len() as size_t,
+            );
         }
     }
 }

@@ -1,10 +1,6 @@
 pub trait Serializable {
     fn from_u8(key: &[u8]) -> Self;
     fn as_u8(&self) -> Vec<u8>;
-    fn as_slice<T, F: Fn(&[u8]) -> T>(&self, f: F) -> T {
-        let dst = self.as_u8();
-        f(&dst)
-    }
 }
 
 pub fn from_u8<K: Serializable>(key: &[u8]) -> K {
