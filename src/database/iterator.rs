@@ -31,7 +31,7 @@ impl Drop for RawIterator {
 ///
 /// Returns key and value as a tuple.
 pub struct Iterator<'a, K: Serializable + 'a> {
-    start: bool,
+    started: bool,
     // Iterator accesses the Database through a leveldb_iter_t pointer
     // but needs to hold the reference for lifetime tracking
     #[allow(dead_code)]
@@ -41,11 +41,11 @@ pub struct Iterator<'a, K: Serializable + 'a> {
     to: Option<&'a K>,
 }
 
-/// An iterator over the leveldb keyspace  that browses the keys backwards.
+/// An iterator over the leveldb keyspace that browses the keys backwards.
 ///
 /// Returns key and value as a tuple.
 pub struct RevIterator<'a, K: Serializable + 'a> {
-    start: bool,
+    started: bool,
     // Iterator accesses the Database through a leveldb_iter_t pointer
     // but needs to hold the reference for lifetime tracking
     #[allow(dead_code)]
@@ -116,10 +116,10 @@ pub trait LevelDBIterator<'a, K: Serializable> {
     fn raw_iterator(&self) -> *mut leveldb_iterator_t;
 
     #[inline]
-    fn start(&self) -> bool;
+    fn start(&mut self);
 
     #[inline]
-    fn started(&mut self);
+    fn started(&self) -> bool;
 
     fn reverse(self) -> Self::RevIter;
 
@@ -138,13 +138,13 @@ pub trait LevelDBIterator<'a, K: Serializable> {
 
     fn advance(&mut self) -> bool {
         unsafe {
-            if !self.start() {
+            if self.started() {
                 self.advance_raw();
             } else {
                 if let Some(k) = self.from_key() {
                     self.seek(k)
                 }
-                self.started();
+                self.start();
             }
         }
         self.valid()
@@ -205,7 +205,7 @@ impl<'a, K: Serializable> Iterator<'a, K> {
             leveldb_readoptions_destroy(c_readoptions);
             leveldb_iter_seek_to_first(ptr);
             Iterator {
-                start: true,
+                started: false,
                 iter: RawIterator { ptr: ptr },
                 database: PhantomData,
                 from: None,
@@ -230,13 +230,13 @@ impl<'a, K: Serializable> LevelDBIterator<'a, K> for Iterator<'a, K> {
     }
 
     #[inline]
-    fn start(&self) -> bool {
-        self.start
+    fn start(&mut self) {
+        self.started = true
     }
 
     #[inline]
-    fn started(&mut self) {
-        self.start = false
+    fn started(&self) -> bool {
+        self.started
     }
 
     #[inline]
@@ -246,13 +246,13 @@ impl<'a, K: Serializable> LevelDBIterator<'a, K> for Iterator<'a, K> {
 
     #[inline]
     fn reverse(self) -> Self::RevIter {
-        if self.start {
+        if !self.started {
             unsafe {
                 leveldb_iter_seek_to_last(self.iter.ptr);
             }
         }
         RevIterator {
-            start: self.start,
+            started: self.started,
             database: self.database,
             iter: self.iter,
             from: self.from,
@@ -288,13 +288,13 @@ impl<'a, K: Serializable> LevelDBIterator<'a, K> for RevIterator<'a, K> {
     }
 
     #[inline]
-    fn start(&self) -> bool {
-        self.start
+    fn start(&mut self) {
+        self.started = true
     }
 
     #[inline]
-    fn started(&mut self) {
-        self.start = false
+    fn started(&self) -> bool {
+        self.started
     }
 
     #[inline]
@@ -304,13 +304,13 @@ impl<'a, K: Serializable> LevelDBIterator<'a, K> for RevIterator<'a, K> {
 
     #[inline]
     fn reverse(self) -> Self::RevIter {
-        if self.start {
+        if !self.started {
             unsafe {
                 leveldb_iter_seek_to_first(self.iter.ptr);
             }
         }
         Iterator {
-            start: self.start,
+            started: self.started,
             database: self.database,
             iter: self.iter,
             from: self.from,
@@ -376,13 +376,13 @@ macro_rules! impl_leveldb_iterator {
             }
 
             #[inline]
-            fn start(&self) -> bool {
-                self.inner.start
+            fn start(&mut self) {
+                self.inner.started = true
             }
 
             #[inline]
-            fn started(&mut self) {
-                self.inner.start = false
+            fn started(&self) -> bool {
+                self.inner.started
             }
 
             #[inline]
