@@ -14,6 +14,7 @@ use libc::{c_char, size_t};
 use std::iter;
 use std::marker::PhantomData;
 use std::slice::from_raw_parts;
+use std::cmp::Ord;
 
 #[allow(missing_docs)]
 struct RawIterator {
@@ -32,6 +33,7 @@ impl Drop for RawIterator {
 /// Returns key and value as a tuple.
 pub struct Iterator<'a, K: Serializable + 'a> {
     started: bool,
+    stopped: bool,
     // Iterator accesses the Database through a leveldb_iter_t pointer
     // but needs to hold the reference for lifetime tracking
     #[allow(dead_code)]
@@ -46,6 +48,7 @@ pub struct Iterator<'a, K: Serializable + 'a> {
 /// Returns key and value as a tuple.
 pub struct RevIterator<'a, K: Serializable + 'a> {
     started: bool,
+    stopped: bool,
     // Iterator accesses the Database through a leveldb_iter_t pointer
     // but needs to hold the reference for lifetime tracking
     #[allow(dead_code)]
@@ -93,7 +96,7 @@ pub trait Iterable<'a, K: Serializable + 'a> {
     fn value_iter(&'a self, options: ReadOptions<'a, K>) -> ValueIterator<K>;
 }
 
-impl<'a, K: Serializable + 'a> Iterable<'a, K> for Database<K> {
+impl<'a, K: Serializable + Ord + 'a> Iterable<'a, K> for Database<K> {
     fn iter(&'a self, options: ReadOptions<'a, K>) -> Iterator<K> {
         Iterator::new(self, options)
     }
@@ -109,7 +112,7 @@ impl<'a, K: Serializable + 'a> Iterable<'a, K> for Database<K> {
 
 #[allow(missing_docs)]
 #[allow(unused_attributes)]
-pub trait LevelDBIterator<'a, K: Serializable> {
+pub trait LevelDBIterator<'a, K: Serializable + Ord> {
     type RevIter: LevelDBIterator<'a, K>;
 
     #[inline]
@@ -120,6 +123,12 @@ pub trait LevelDBIterator<'a, K: Serializable> {
 
     #[inline]
     fn started(&self) -> bool;
+
+    #[inline]
+    fn stop(&mut self);
+
+    #[inline]
+    fn stopped(&self) -> bool;
 
     fn reverse(self) -> Self::RevIter;
 
@@ -138,11 +147,16 @@ pub trait LevelDBIterator<'a, K: Serializable> {
 
     fn advance(&mut self) -> bool {
         unsafe {
-            if self.started() {
+            if self.started() && !self.stopped() {
                 self.advance_raw();
+                if let Some(end) = self.to_key() {
+                    if end <= &self.key() {
+                        self.stop();
+                    }
+                }
             } else {
-                if let Some(k) = self.from_key() {
-                    self.seek(k)
+                if let Some(begin) = self.from_key() {
+                    self.seek(begin)
                 }
                 self.start();
             }
@@ -197,7 +211,7 @@ pub trait LevelDBIterator<'a, K: Serializable> {
     }
 }
 
-impl<'a, K: Serializable> Iterator<'a, K> {
+impl<'a, K: Serializable + Ord> Iterator<'a, K> {
     fn new(database: &'a Database<K>, options: ReadOptions<'a, K>) -> Iterator<'a, K> {
         unsafe {
             let c_readoptions = c_readoptions(&options);
@@ -206,6 +220,7 @@ impl<'a, K: Serializable> Iterator<'a, K> {
             leveldb_iter_seek_to_first(ptr);
             Iterator {
                 started: false,
+                stopped: false,
                 iter: RawIterator { ptr: ptr },
                 database: PhantomData,
                 from: None,
@@ -221,7 +236,7 @@ impl<'a, K: Serializable> Iterator<'a, K> {
     }
 }
 
-impl<'a, K: Serializable> LevelDBIterator<'a, K> for Iterator<'a, K> {
+impl<'a, K: Serializable + Ord> LevelDBIterator<'a, K> for Iterator<'a, K> {
     type RevIter = RevIterator<'a, K>;
 
     #[inline]
@@ -240,6 +255,16 @@ impl<'a, K: Serializable> LevelDBIterator<'a, K> for Iterator<'a, K> {
     }
 
     #[inline]
+    fn stopped(&self) -> bool {
+        self.stopped
+    }
+
+    #[inline]
+    fn stop(&mut self) {
+        self.stopped = true
+    }
+
+    #[inline]
     unsafe fn advance_raw(&mut self) {
         leveldb_iter_next(self.raw_iterator());
     }
@@ -253,6 +278,7 @@ impl<'a, K: Serializable> LevelDBIterator<'a, K> for Iterator<'a, K> {
         }
         RevIterator {
             started: self.started,
+            stopped: self.stopped,
             database: self.database,
             iter: self.iter,
             from: self.from,
@@ -279,7 +305,7 @@ impl<'a, K: Serializable> LevelDBIterator<'a, K> for Iterator<'a, K> {
     }
 }
 
-impl<'a, K: Serializable> LevelDBIterator<'a, K> for RevIterator<'a, K> {
+impl<'a, K: Serializable + Ord> LevelDBIterator<'a, K> for RevIterator<'a, K> {
     type RevIter = Iterator<'a, K>;
 
     #[inline]
@@ -298,6 +324,16 @@ impl<'a, K: Serializable> LevelDBIterator<'a, K> for RevIterator<'a, K> {
     }
 
     #[inline]
+    fn stop(&mut self) {
+        self.stopped = true
+    }
+
+    #[inline]
+    fn stopped(&self) -> bool {
+        self.stopped
+    }
+
+    #[inline]
     unsafe fn advance_raw(&mut self) {
         leveldb_iter_prev(self.raw_iterator());
     }
@@ -311,6 +347,7 @@ impl<'a, K: Serializable> LevelDBIterator<'a, K> for RevIterator<'a, K> {
         }
         Iterator {
             started: self.started,
+            stopped: self.stopped,
             database: self.database,
             iter: self.iter,
             from: self.from,
@@ -337,7 +374,7 @@ impl<'a, K: Serializable> LevelDBIterator<'a, K> for RevIterator<'a, K> {
     }
 }
 
-impl<'a, K: Serializable> KeyIterator<'a, K> {
+impl<'a, K: Serializable + Ord> KeyIterator<'a, K> {
     fn new(database: &'a Database<K>, options: ReadOptions<'a, K>) -> KeyIterator<'a, K> {
         KeyIterator {
             inner: Iterator::new(database, options),
@@ -351,7 +388,7 @@ impl<'a, K: Serializable> KeyIterator<'a, K> {
     }
 }
 
-impl<'a, K: Serializable> ValueIterator<'a, K> {
+impl<'a, K: Serializable + Ord> ValueIterator<'a, K> {
     fn new(database: &'a Database<K>, options: ReadOptions<'a, K>) -> ValueIterator<'a, K> {
         ValueIterator {
             inner: Iterator::new(database, options),
@@ -367,7 +404,7 @@ impl<'a, K: Serializable> ValueIterator<'a, K> {
 
 macro_rules! impl_leveldb_iterator {
     ($T:ty, $RevT:ty) => {
-        impl<'a, K: Serializable> LevelDBIterator<'a, K> for $T {
+        impl<'a, K: Serializable + Ord> LevelDBIterator<'a, K> for $T {
             type RevIter = $RevT;
 
             #[inline]
@@ -383,6 +420,16 @@ macro_rules! impl_leveldb_iterator {
             #[inline]
             fn started(&self) -> bool {
                 self.inner.started
+            }
+
+            #[inline]
+            fn stop(&mut self) {
+                self.inner.stopped = true
+            }
+
+            #[inline]
+            fn stopped(&self) -> bool {
+                self.inner.stopped
             }
 
             #[inline]
@@ -425,11 +472,11 @@ impl_leveldb_iterator!(RevValueIterator<'a, K>, ValueIterator<'a, K>);
 
 macro_rules! impl_iterator {
     ($T:ty, $Item:ty, $ItemMethod:ident) => {
-        impl<'a, K: Serializable> iter::Iterator for $T {
+        impl<'a, K: Serializable + Ord> iter::Iterator for $T {
             type Item = $Item;
 
             fn next(&mut self) -> Option<Self::Item> {
-                if self.advance() {
+                if self.advance() && !self.stopped() {
                     Some(self.$ItemMethod())
                 } else {
                     None

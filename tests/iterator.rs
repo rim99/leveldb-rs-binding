@@ -74,6 +74,50 @@ fn test_iterator_from_to() {
 }
 
 #[test]
+fn test_iterator_bounded_next() {
+    let tmp = tmpdir("from_to");
+    let database = &mut open_database(tmp.path(), true);
+    db_put_simple(database, 1, &[1]);
+    db_put_simple(database, 2, &[2]);
+    db_put_simple(database, 3, &[3]);
+    db_put_simple(database, 4, &[4]);
+    db_put_simple(database, 5, &[5]);
+
+    let begin = 2;
+    let end = 4;
+    let read_opts = ReadOptions::new();
+    let mut iter = database.iter(read_opts).from(&begin).to(&end);
+
+    let mut keys = vec![];
+    while let Some((k, _)) = iter.next() {
+        keys.push(k)
+    }
+    assert_eq!(keys, vec![2, 3]);
+}
+
+#[test]
+fn test_iterator_bounded_next_2() {
+    let tmp = tmpdir("from_to");
+    let database = &mut open_database(tmp.path(), true);
+    db_put_simple(database, 1, &[1]);
+    db_put_simple(database, 3, &[3]);
+    db_put_simple(database, 5, &[5]);
+    db_put_simple(database, 7, &[7]);
+    db_put_simple(database, 9, &[9]);
+
+    let begin = 2;
+    let end = 6;
+    let read_opts = ReadOptions::new();
+    let mut iter = database.iter(read_opts).from(&begin).to(&end);
+
+    let mut keys = vec![];
+    while let Some((k, _)) = iter.next() {
+        keys.push(k)
+    }
+    assert_eq!(keys, vec![3, 5]);
+}
+
+#[test]
 fn test_key_iterator() {
     let tmp = tmpdir("key_iter");
     let database = &mut open_database(tmp.path(), true);

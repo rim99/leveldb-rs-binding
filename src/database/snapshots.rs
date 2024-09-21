@@ -14,6 +14,7 @@ use crate::database::iterator::{Iterable, Iterator, KeyIterator, ValueIterator};
 use crate::database::options::ReadOptions;
 
 use std::borrow::Borrow;
+use std::cmp::Ord;
 
 #[allow(missing_docs)]
 struct RawSnapshot {
@@ -80,7 +81,7 @@ impl<'a, K: Serializable> Snapshot<'a, K> {
     }
 }
 
-impl<'a, K: Serializable + 'a> Iterable<'a, K> for Snapshot<'a, K> {
+impl<'a, K: Serializable + Ord + 'a> Iterable<'a, K> for Snapshot<'a, K> {
     fn iter(&'a self, mut options: ReadOptions<'a, K>) -> Iterator<K> {
         options.snapshot = Some(self);
         self.database.iter(options)
