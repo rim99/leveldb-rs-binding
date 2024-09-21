@@ -474,7 +474,8 @@ macro_rules! impl_iterator {
     ($T:ty, $Item:ty, $ItemMethod:ident) => {
         impl<'a, K: Serializable + Ord> iter::Iterator for $T {
             type Item = $Item;
-
+            // The "next" method would iterate once, and stop at the end (to_key).
+            // Use "advance" method if starting from begin (from_key) again is preferred
             fn next(&mut self) -> Option<Self::Item> {
                 if self.advance() && !self.stopped() {
                     Some(self.$ItemMethod())
