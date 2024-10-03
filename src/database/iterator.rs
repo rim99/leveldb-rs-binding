@@ -11,10 +11,10 @@ use crate::binding::{
     leveldb_iter_valid, leveldb_iter_value, leveldb_iterator_t, leveldb_readoptions_destroy,
 };
 use libc::{c_char, size_t};
+use std::cmp::Ord;
 use std::iter;
 use std::marker::PhantomData;
 use std::slice::from_raw_parts;
-use std::cmp::Ord;
 
 #[allow(missing_docs)]
 struct RawIterator {
@@ -149,16 +149,16 @@ pub trait LevelDBIterator<'a, K: Serializable + Ord> {
         unsafe {
             if self.started() && !self.stopped() {
                 self.advance_raw();
-                if let Some(end) = self.to_key() {
-                    if end <= &self.key() {
-                        self.stop();
-                    }
-                }
             } else {
                 if let Some(begin) = self.from_key() {
                     self.seek(begin)
                 }
                 self.start();
+            }
+            if let Some(end) = self.to_key() {
+                if !self.valid() || end <= &self.key() {
+                    self.stop();
+                }
             }
         }
         self.valid()
